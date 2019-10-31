@@ -18,6 +18,6 @@
         <env name="BRAINTREE_MERCHANT_ID" value=""/>
         <env name="BRAINTREE_PUBLIC_KEY" value=""/>
         <env name="BRAINTREE_PRIVATE_KEY" value=""/>
-        <env name="BRAINTREE_MODEL" value="Laravel\Cashier\Tests\User"/>
+        <env name="BRAINTREE_MODEL" value="Acadea\Cashier\Tests\User"/>
     </php>
 </phpunit>

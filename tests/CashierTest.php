@@ -1,22 +1,22 @@
 <?php
 
-namespace Laravel\Cashier\Tests;
+namespace Acadea\Cashier\Tests;
 
 use Carbon\Carbon;
 use Braintree_Configuration;
 use Illuminate\Http\Request;
-use Laravel\Cashier\Billable;
+use Acadea\Cashier\Billable;
 use PHPUnit\Framework\TestCase;
 use Illuminate\Database\Schema\Builder;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Capsule\Manager as DB;
 use Illuminate\Database\Eloquent\Model as Eloquent;
-use Laravel\Cashier\Http\Controllers\WebhookController;
+use Acadea\Cashier\Http\Controllers\WebhookController;
 
 class CashierTest extends TestCase
 {
-    public function setUp()
+    public function setUp():void
     {
         Braintree_Configuration::environment('sandbox');
         Braintree_Configuration::merchantId(getenv('BRAINTREE_MERCHANT_ID'));
@@ -57,7 +57,7 @@ class CashierTest extends TestCase
         });
     }
 
-    public function tearDown()
+    public function tearDown():void
     {
         $this->schema()->drop('users');
         $this->schema()->drop('subscriptions');

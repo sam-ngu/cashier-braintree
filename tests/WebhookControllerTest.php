@@ -1,10 +1,10 @@
 <?php
 
-namespace Laravel\Cashier\Tests;
+namespace Acadea\Cashier\Tests;
 
 use Illuminate\Http\Request;
 use PHPUnit\Framework\TestCase;
-use Laravel\Cashier\Http\Controllers\WebhookController;
+use Acadea\Cashier\Http\Controllers\WebhookController;
 
 class WebhookControllerTest extends TestCase
 {

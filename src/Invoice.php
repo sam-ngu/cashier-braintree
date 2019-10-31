@@ -1,11 +1,13 @@
 <?php
 
-namespace Laravel\Cashier;
+namespace Acadea\Cashier;
 
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Braintree\Transaction;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
+use Spatie\Browsershot\Browsershot;
 use Symfony\Component\HttpFoundation\Response;
 use Braintree\Transaction as BraintreeTransaction;
 use Illuminate\Contracts\View\View as ViewContract;
@@ -231,21 +233,28 @@ class Invoice
      */
     public function pdf(array $data)
     {
-        if (! defined('DOMPDF_ENABLE_AUTOLOAD')) {
-            define('DOMPDF_ENABLE_AUTOLOAD', false);
-        }
 
-        if (file_exists($configPath = base_path().'/vendor/dompdf/dompdf/dompdf_config.inc.php')) {
-            require_once $configPath;
-        }
+        $path = storage_path(config('cashier.logo_path'));
 
-        $dompdf = new Dompdf;
+        $img = File::get($path);
+        $type = File::mimeType($path);
 
-        $dompdf->loadHtml($this->view($data)->render());
+        $logo = 'data:' . $type . ';base64,' . base64_encode($img);
 
-        $dompdf->render();
+        return Browsershot::html($this->view(array_merge($data, [
+            'logo' => $logo,
+            'business_number' => config('cashier.business_number'),
+            'street' => config('cashier.street'),
+            // 'City 2123 State Australia',
+            'location' => config('cashier.city') . ' ' . config('cashier.postcode') . ' ' . config('cashier.state') . ' ' . config('cashier.country'),
+            'phone' => config('cashier.phone'),
+            'url' => config('app.url'),
+        ]))->render())
+            ->setChromePath(config('cashier.chromium_path'))
+            ->noSandbox()
+            ->format('A4')
+            ->pdf();
 
-        return $dompdf->output();
     }
 
     /**

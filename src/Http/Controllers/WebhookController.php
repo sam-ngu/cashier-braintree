@@ -1,11 +1,11 @@
 <?php
 
-namespace Laravel\Cashier\Http\Controllers;
+namespace Acadea\Cashier\Http\Controllers;
 
 use Exception;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Laravel\Cashier\Subscription;
+use Acadea\Cashier\Subscription;
 use Braintree\WebhookNotification;
 use Illuminate\Routing\Controller;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,7 +89,7 @@ class WebhookController extends Controller
      * Get the model for the given subscription ID.
      *
      * @param  string  $subscriptionId
-     * @return \Laravel\Cashier\Subscription|null
+     * @return \Acadea\Cashier\Subscription|null
      */
     protected function getSubscriptionById($subscriptionId): ?Subscription
     {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Cashier;
+namespace Acadea\Cashier;
 
 use Exception;
 use Carbon\Carbon;
@@ -108,12 +108,12 @@ class SubscriptionBuilder
      * Add a new Braintree subscription to the model.
      *
      * @param  array  $options
-     * @return \Laravel\Cashier\Subscription
+     * @return \Acadea\Cashier\Subscription
      * @throws \Exception
      */
-    public function add(array $options = [])
+    public function add($quantity, array $options = [])
     {
-        return $this->create(null, $options);
+        return $this->create(null, $quantity, $options);
     }
 
     /**
@@ -122,11 +122,21 @@ class SubscriptionBuilder
      * @param  string|null  $token
      * @param  array  $customerOptions
      * @param  array  $subscriptionOptions
-     * @return \Laravel\Cashier\Subscription
+     * @return \Acadea\Cashier\Subscription
      * @throws \Exception
      */
-    public function create($token = null, array $customerOptions = [], array $subscriptionOptions = []): Subscription
+    public function create($token = null, $quantity = 1, array $customerOptions = [], array $subscriptionOptions = []): Subscription
     {
+        $subscriptionOptions = array_merge($subscriptionOptions, [
+            'addOns' => [
+                'add' => [
+                    [
+                        'inheritedFromId' => $this->plan.'-quantity',
+                        'quantity' => $quantity
+                    ]
+                ]
+            ]
+        ]);
         $payload = $this->getSubscriptionPayload(
             $this->getBraintreeCustomer($token, $customerOptions), $subscriptionOptions
         );
@@ -151,7 +161,7 @@ class SubscriptionBuilder
             'name' => $this->name,
             'braintree_id'   => $response->subscription->id,
             'braintree_plan' => $this->plan,
-            'quantity' => 1,
+            'quantity' => $quantity,
             'trial_ends_at' => $trialEndsAt,
             'ends_at' => null,
         ]);

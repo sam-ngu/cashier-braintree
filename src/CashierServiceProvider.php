@@ -1,6 +1,6 @@
 <?php
 
-namespace Laravel\Cashier;
+namespace Acadea\Cashier;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -17,6 +17,12 @@ class CashierServiceProvider extends ServiceProvider
 
         $this->publishes([
             __DIR__.'/../resources/views' => base_path('resources/views/vendor/cashier'),
+            __DIR__.'/../config/cashier.php' => config_path('cashier.php'),
         ]);
+    }
+
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__ . '/../config/cashier.php', 'cashier');
     }
 }

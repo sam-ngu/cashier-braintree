@@ -1,7 +1,10 @@
 <?php
 
-namespace Laravel\Cashier;
+namespace Acadea\Cashier;
 
+use App\Exceptions\GeneralException;
+use App\Exceptions\SubscriptionNotFound;
+use Braintree\Subscription;
 use Exception;
 use Carbon\Carbon;
 use Braintree\Customer;
@@ -82,7 +85,7 @@ trait Billable
      *
      * @param  string  $subscription
      * @param  string  $plan
-     * @return \Laravel\Cashier\SubscriptionBuilder
+     * @return \Acadea\Cashier\SubscriptionBuilder
      */
     public function newSubscription($subscription, $plan): SubscriptionBuilder
     {
@@ -149,7 +152,7 @@ trait Billable
      * Get a subscription instance by name.
      *
      * @param  string  $subscription
-     * @return \Laravel\Cashier\Subscription|null
+     * @return \Acadea\Cashier\Subscription|null
      */
     public function subscription($subscription = 'default')
     {
@@ -174,7 +177,7 @@ trait Billable
      * Find an invoice by ID.
      *
      * @param  string  $id
-     * @return \Laravel\Cashier\Invoice|null
+     * @return \Acadea\Cashier\Invoice|null
      */
     public function findInvoice($id)
     {
@@ -195,7 +198,7 @@ trait Billable
      * Find an invoice or throw a 404 error.
      *
      * @param  string  $id
-     * @return \Laravel\Cashier\Invoice
+     * @return \Acadea\Cashier\Invoice
      */
     public function findInvoiceOrFail($id): Invoice
     {
@@ -356,12 +359,17 @@ trait Billable
      */
     public function paymentMethod()
     {
-        $customer = $this->asBraintreeCustomer();
+        try{
+            $customer = $this->asBraintreeCustomer();
 
-        foreach ($customer->paymentMethods as $paymentMethod) {
-            if ($paymentMethod->isDefault()) {
-                return $paymentMethod;
+            foreach ($customer->paymentMethods as $paymentMethod) {
+                if ($paymentMethod->isDefault()) {
+                    return $paymentMethod;
+                }
             }
+        }catch (\InvalidArgumentException $exception){
+            // customer is not registered as braintree customer
+            return null;
         }
     }
 
@@ -387,6 +395,61 @@ trait Billable
         }
 
         return false;
+    }
+
+    public function findPaymentMethod($token)
+    {
+        try{
+            $payment = PaymentMethod::find($token);
+            if((string)$payment->customerId !== (string)$this->braintree_id)
+                return;
+
+            return $payment;
+
+        }catch (Exception $exception){
+
+            return;
+        }
+    }
+
+    /**
+     * Update the default payment method to an existing payment method
+     * @param $token
+     * @throws
+     */
+    public function updatePaymentMethod($token)
+    {
+        //verify if token belongs to model
+        $paymentMethod = $this->findPaymentMethod($token);
+
+        if(is_null($paymentMethod))
+            throw new Exception('Payment token not found for model specified.');
+
+        $response = PaymentMethod::update(
+            $token,
+            [
+                'options' => [
+                    'makeDefault' => true,
+                    'verifyCard' => true,
+                ],
+            ]
+        );
+
+        if (! $response->success) {
+            throw new Exception('Braintree was unable to create a payment method: '.$response->message);
+        }
+
+        $paypalAccount = $this->paymentMethod() instanceof PaypalAccount;
+
+        $this->forceFill([
+            'paypal_email' => $paypalAccount ? $response->paymentMethod->email : null,
+            'card_brand' => $paypalAccount ? null : $response->paymentMethod->cardType,
+            'card_last_four' => $paypalAccount ? null : $response->paymentMethod->last4,
+        ])->save();
+
+        $this->updateSubscriptionsToPaymentMethod(
+            $response->paymentMethod->token
+        );
     }
 
     /**
@@ -475,5 +538,12 @@ trait Billable
     public function hasBraintreeId()
     {
         return ! is_null($this->braintree_id);
+    }
+
+    public function retryCharge(string $subscription_id, string $amount = null, bool $submitForSettlement = true)
+    {
+        $exist = $this->subscriptions()->where('braintree_id', '=', $subscription_id)->exists();
+        throw_if(!$exist, SubscriptionNotFound::class, 'Model did not subscribe to the subscription specified.');
+        return Subscription::retryCharge($subscription_id, $amount, $submitForSettlement);
     }
 }

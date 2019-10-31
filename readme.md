@@ -23,7 +23,7 @@ You will need to set the following details locally and on your Braintree account
     BRAINTREE_MERCHANT_ID=
     BRAINTREE_PUBLIC_KEY=
     BRAINTREE_PRIVATE_KEY=
-    BRAINTREE_MODEL=Laravel\Cashier\Tests\User
+    BRAINTREE_MODEL=Acadea\Cashier\Tests\User
     
 You can set these variables in the `phpunit.xml.dist` file.
 
